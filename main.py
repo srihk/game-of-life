@@ -23,6 +23,45 @@ def drawGrid():
         for cell in row:
             pygame.draw.rect(screen, cell.getColor(), cell.rect)
 
+def isValid(i: int, j: int) -> bool:
+    rows = len(grid)
+    cols = len(grid[0])
+    if (i >= 0 and i < rows and j >= 0 and j < cols):
+        return True
+    
+    return False
+
+def neighborCount(i: int, j: int, state: Cell.State):
+    offsets = [
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, -1],
+        [0, 1],
+        [1, -1],
+        [1, 0],
+        [1, 1]
+    ]
+    count = 0;
+    for offset in offsets:
+        if (isValid(i + offset[0], j + offset[1]) and grid[i + offset[0]][j + offset[1]].state == state):
+            count += 1
+    
+    return count
+
+def updateGrid():
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            liveNeighborCount = neighborCount(i, j, Cell.State.ALIVE)
+            if (
+                grid[i][j].state == Cell.State.ALIVE 
+                and (liveNeighborCount < 2 or liveNeighborCount > 3)
+            ):
+                grid[i][j].state = Cell.State.DEAD
+            elif (grid[i][j].state == Cell.State.DEAD and liveNeighborCount == 3):
+                grid[i][j].state = Cell.State.ALIVE
+
+
 # pygame setup
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -31,7 +70,6 @@ running = True
 dt = 0
 frameCount = 0
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 buildGrid()
 while running:
     # poll for events
@@ -44,12 +82,11 @@ while running:
     # screen.fill("purple")
 
     drawGrid()
-    pygame.draw.rect(screen, "red", rect=pygame.Rect((player_pos), (40, 40)))
 
     # keys = pygame.key.get_pressed()
     frameCount += 1
     if (frameCount % 60 == 0):
-        player_pos.y -= 40
+        updateGrid()
         prevTime = clock.get_rawtime()
     # if clock.tick(60) / 1000 == 1:
     #     player_pos.y += 40
